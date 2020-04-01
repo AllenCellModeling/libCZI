@@ -30,24 +30,27 @@ void* CHeapAllocator::Allocate(std::uint64_t size)
 	{
 		throw std::out_of_range("The requested size for allocation is out-of-range.");
 	}
-#if defined(__EMSCRIPTEN__)||defined(__APPLE__)||!defined(_ISOC11_SOURCE)
-	return malloc((size_t)size);
-#else
-#if defined(__GNUC__)
+	// it's not clear to me why the code needs the returned pointer to be at a memory boundary
+	// meaning divisible by 32 in this case. I've preserved that functionality but restructured
+	// the code block to be more general.
+	// Compilation was failing on the original with linux distros that don't have the _ISOC11_SOURCE.
+#if defined(_WIN32)
+	return (void *)_aligned_malloc((size_t)size, 32);
+#elif defined(_ISOC11_SOURCE)
 	return aligned_alloc(32, size);
 #else
-	void* pv = _aligned_malloc((size_t)size, 32);
-	return pv;
-#endif
+	return ::operator new((size_t)size);
 #endif
 }
 
 void CHeapAllocator::Free(void* ptr)
 {
-#if defined(__GNUC__)||defined(__EMSCRIPTEN__)||!defined(_ISOC11_SOURCE)
-	free(ptr);
+#if defined(_WIN32)
+    _aligned_free(ptr);
+#elif defined(_ISOC11_SOURCE)
+    free(ptr);
 #else
-	_aligned_free(ptr);
+    ::operator delete(ptr);
 #endif
 }
 
