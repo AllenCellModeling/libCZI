@@ -30,7 +30,7 @@ void* CHeapAllocator::Allocate(std::uint64_t size)
 	{
 		throw std::out_of_range("The requested size for allocation is out-of-range.");
 	}
-#if defined(__EMSCRIPTEN__)||defined(__APPLE__)
+#if defined(__EMSCRIPTEN__)||defined(__APPLE__)||!defined(_ISOC11_SOURCE)
 	return malloc((size_t)size);
 #else
 #if defined(__GNUC__)
@@ -44,7 +44,7 @@ void* CHeapAllocator::Allocate(std::uint64_t size)
 
 void CHeapAllocator::Free(void* ptr)
 {
-#if defined(__GNUC__)||defined(__EMSCRIPTEN__)
+#if defined(__GNUC__)||defined(__EMSCRIPTEN__)||!defined(_ISOC11_SOURCE)
 	free(ptr);
 #else
 	_aligned_free(ptr);
